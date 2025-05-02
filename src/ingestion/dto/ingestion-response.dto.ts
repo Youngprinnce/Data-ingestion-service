@@ -1,16 +1,20 @@
-class IngestionResponseDto {
-    sourceId: string;
-    name?: string;
-    city?: string;
-    country?: string;
-    isAvailable?: boolean;
-    priceForNight?: number;
-    pricePerNight?: number;
-    priceSegment?: PriceSegment;
+export class IngestionResponseDto {
+  sourceId: string;
+  name?: string;
+  city?: string;
+  country?: string;
+  isAvailable?: boolean;
+  pricePerNight?: number;
+  priceSegment?: PriceSegment;
 }
 
-enum PriceSegment {
+export enum PriceSegment {
   LOW = 'low',
   MEDIUM = 'medium',
   HIGH = 'high',
+}
+
+export enum IngestionStrategyType {
+  SIMPLE = 'simple',
+  STREAM = 'stream',
 }

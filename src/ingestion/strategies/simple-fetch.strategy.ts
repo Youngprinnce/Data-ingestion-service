@@ -1,50 +1,34 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { HttpServiceWrapper } from '../utils/http-wrapper';
 import { IngestionStrategy } from '../interfaces/ingestion-strategy.interface';
-
-interface ApiAccommodation {
-  id: number;
-  name: string;
-  address: {
-    country: string;
-    city: string;
-  };
-  isAvailable: boolean;
-  priceForNight: number;
-}
+import { FieldMapper } from '../utils/field-mapper.utils';
+import { IngestionResponseDto } from '../dto/ingestion-response.dto';
+import { HttpServiceWrapper } from '@src/common/http-wrapper';
 
 @Injectable()
 export class SimpleFetchStrategy implements IngestionStrategy {
   private readonly logger = new Logger(SimpleFetchStrategy.name);
 
-  constructor(private readonly http: HttpServiceWrapper) {}
+  constructor(
+    private readonly http: HttpServiceWrapper,
+    private readonly fieldMapper: FieldMapper,
+  ) {}
 
-  async ingest(url: string): Promise<IngestionResponseDto[]> {
+  async ingest(
+    url: string,
+    fieldMapping: Record<string, string>,
+  ): Promise<IngestionResponseDto[]> {
     this.logger.log(`Starting ingestion using SimpleFetchStrategy from: ${url}`);
 
     try {
-      // Fetch the data from the external API
-      const data = await this.http.callApi<ApiAccommodation[]>(url, 'GET') as ApiAccommodation[];
-
-      // Transform the data into IngestionResponseDto format
-      const transformed = this.transform(data);
-
+      const data = await this.http.callApi<any[]>(url, 'GET');
+      const transformed: IngestionResponseDto[] = data.map((item: Record<string, any>) => 
+        this.fieldMapper.mapFields(item, fieldMapping)
+      ) as IngestionResponseDto[];
       this.logger.log(`Successfully ingested ${transformed.length} records from: ${url}`);
       return transformed;
     } catch (error) {
       this.logger.error(`Failed to ingest from ${url}: ${error.message}`, error.stack);
       throw error;
     }
-  }
-
-  private transform(data: ApiAccommodation[]): IngestionResponseDto[] {
-    return data.map(item => ({
-      sourceId: String(item.id),
-      name: item.name,
-      city: item.address.city,
-      country: item.address.country,
-      isAvailable: item.isAvailable,
-      priceForNight: item.priceForNight,
-    }));
   }
 }

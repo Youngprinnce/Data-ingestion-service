@@ -7,21 +7,27 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum PriceSegment {
+  high
+  medium
+  low
+}
+
 model Listing {
-  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  id            String       @id @default(auto()) @map("_id") @db.ObjectId
   name          String?
   city          String?
   country       String?
   isAvailable   Boolean?
-  priceForNight Int?
   pricePerNight Int?
-  priceSegment  String?
-  sourceId      String   @unique
+  priceSegment  PriceSegment?
+  sourceId      String       @unique
+  metadata      Json?        // For unmapped fields from new JSON sources
 
   @@index([name])
   @@index([city, country])
-  @@index([city, priceForNight])
-  @@index([country, priceForNight])
+  @@index([city, pricePerNight])
+  @@index([country, pricePerNight])
   @@index([city, isAvailable])
   @@index([country, isAvailable])
 }

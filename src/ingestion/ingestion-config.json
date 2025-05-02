@@ -1,0 +1,27 @@
+[
+  {
+    "sourceId": "source1",
+    "url": "https://buenro-tech-assessment-materials.s3.eu-north-1.amazonaws.com/structured_generated_data.json",
+    "strategy": "simple",
+    "fieldMapping": {
+      "id": "sourceId",
+      "name": "name",
+      "address.city": "city",
+      "address.country": "country",
+      "isAvailable": "isAvailable",
+      "priceForNight": "pricePerNight"
+    }
+  },
+  {
+    "sourceId": "source2",
+    "url": "https://buenro-tech-assessment-materials.s3.eu-north-1.amazonaws.com/large_generated_data.json",
+    "strategy": "stream",
+    "fieldMapping": {
+      "id": "sourceId",
+      "city": "city",
+      "availability": "isAvailable",
+      "pricePerNight": "pricePerNight",
+      "priceSegment": "priceSegment"
+    }
+  }
+]

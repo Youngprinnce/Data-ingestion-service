@@ -1,14 +1,16 @@
 import { Module } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
-import { IngestDataJob } from './jobs/ingest-data.job';
 import { IngestionModule } from 'src/ingestion/ingestion.module';
+import { DataIngestionJob } from './data-ingestion-job';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
     ScheduleModule.forRoot(),
     IngestionModule,
+    ConfigModule
   ],
-  providers: [IngestDataJob],
+  providers: [DataIngestionJob],
   exports: [],
 })
-export class ProcessModule {}
+export class JobModule {}
