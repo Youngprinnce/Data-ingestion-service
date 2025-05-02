@@ -8,14 +8,20 @@ datasource db {
 }
 
 model Listing {
-  id             String      @id @default(auto()) @map("_id") @db.ObjectId
-  name           String?
-  city           String?
-  country        String?
-  isAvailable    Boolean?
-  priceForNight  Int?
-  pricePerNight  Int?
-  priceSegment   String?
-  sourceId       String
-}
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  name          String?
+  city          String?
+  country       String?
+  isAvailable   Boolean?
+  priceForNight Int?
+  pricePerNight Int?
+  priceSegment  String?
+  sourceId      String   @unique
 
+  @@index([name])
+  @@index([city, country])
+  @@index([city, priceForNight])
+  @@index([country, priceForNight])
+  @@index([city, isAvailable])
+  @@index([country, isAvailable])
+}

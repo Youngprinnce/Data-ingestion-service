@@ -3,6 +3,8 @@ import { buildMongoFilters } from './utils/query-parser';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { QueryListingsDto } from './dto/query-listings.dto';
 
+const MAX_PAGE_SIZE = 100;
+
 @Injectable()
 export class ListingsService {
   constructor(private readonly prisma: PrismaService) {}
@@ -10,19 +12,24 @@ export class ListingsService {
   async findAll(query: QueryListingsDto) {
     const filter = buildMongoFilters(query);
 
-    const skip = (query.page - 1) * query.limit;
-    const sort: any = {};
+    // Sanitize and enforce pagination limits
+    const page = query.page > 0 ? query.page : 1;
+    const limit = Math.min(query.limit || 20, MAX_PAGE_SIZE);
+    const skip = (page - 1) * limit;
 
-    if (query.sortBy) {
-      sort[query.sortBy] = query.sortOrder === 'desc' ? 'desc' : 'asc';
-    }
+    // Whitelist sort fields (prevents MongoDB injection or invalid fields)
+    const allowedSortFields = [
+      'name', 'city', 'country', 'priceForNight', 'pricePerNight', 'priceSegment',
+    ];
+    const sortField = allowedSortFields.includes(query.sortBy) ? query.sortBy : 'priceForNight';
+    const sortDirection = query.sortOrder === 'desc' ? 'desc' : 'asc';
 
     const [data, total] = await Promise.all([
       this.prisma.listing.findMany({
         where: filter,
         skip,
-        take: query.limit,
-        orderBy: sort,
+        take: limit,
+        orderBy: { [sortField]: sortDirection },
         select: {
           name: true,
           city: true,
@@ -38,9 +45,9 @@ export class ListingsService {
     return {
       meta: {
         total,
-        page: query.page,
-        limit: query.limit,
-        pages: Math.ceil(total / query.limit),
+        page,
+        limit,
+        pages: Math.ceil(total / limit),
       },
       data,
     };

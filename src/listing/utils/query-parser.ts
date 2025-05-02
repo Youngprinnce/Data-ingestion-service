@@ -1,16 +1,21 @@
-export function buildMongoFilters(query: any): any {
+export function buildMongoFilters(query: any): Record<string, any> {
   const filter: any = {};
 
-  if (query.name) filter.name = { $regex: query.name, $options: "i" };
-  if (query.city) filter.city = { $regex: query.city, $options: "i" };
-  if (query.country) filter.country = { $regex: query.country, $options: "i" };
-  if (query.isAvailable !== undefined)
-    filter.isAvailable = query.isAvailable === "true";
+  const textSearchFields = ['name', 'city', 'country'];
+  for (const field of textSearchFields) {
+    if (query[field]) {
+      filter[field] = { $regex: query[field], $options: 'i' };
+    }
+  }
 
-  if (query.priceMin || query.priceMax) {
+  if (query.isAvailable !== undefined) {
+    filter.isAvailable = query.isAvailable === 'true';
+  }
+
+  if (query.priceMin != null || query.priceMax != null) {
     filter.priceForNight = {};
-    if (query.priceMin) filter.priceForNight.$gte = Number(query.priceMin);
-    if (query.priceMax) filter.priceForNight.$lte = Number(query.priceMax);
+    if (query.priceMin != null) filter.priceForNight.$gte = +query.priceMin;
+    if (query.priceMax != null) filter.priceForNight.$lte = +query.priceMax;
   }
 
   return filter;
