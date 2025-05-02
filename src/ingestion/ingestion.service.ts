@@ -35,7 +35,7 @@ export class IngestionService {
     if (!batch || batch.length === 0) return;
 
     try {
-      await this.prisma.accommodation.createMany({ data: batch });
+      await this.prisma.listing.createMany({ data: batch });
       this.logger.log(`Saved batch of ${batch.length} accommodations`);
     } catch (error) {
       this.logger.error(`Failed to save batch: ${error.message}`);

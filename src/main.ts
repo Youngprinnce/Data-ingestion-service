@@ -6,20 +6,17 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory, Reflector } from '@nestjs/core';
-
+import { SwaggerModule } from './swagger/swagger.module';
 import * as bodyParser from 'body-parser';
 import helmet from 'helmet';
-
 import { AppModule } from './app.module';
-// import { HttpExceptionFilter } from './common/filters/http-exception.filter';
-// import { ResponseInterceptor } from './common/interceptors/response.interceptor';
-// import { SwaggerModule } from './swagger/swagger.module';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
-  const { port } = configService.get('app');
-  //const { swaggerApiRoot } = configService.get('swagger');
+  const { port, swaggerApiRoot } = configService.get('app');
 
   const globalPrefix = 'api';
   app.setGlobalPrefix(globalPrefix);
@@ -36,8 +33,8 @@ async function bootstrap() {
       errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY
     }),
   );
-  // app.useGlobalFilters(new HttpExceptionFilter());
-  // app.useGlobalInterceptors(new ResponseInterceptor());
+  app.useGlobalFilters(new HttpExceptionFilter());
+  app.useGlobalInterceptors(new ResponseInterceptor());
   app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
 
   // cors options
@@ -59,13 +56,12 @@ async function bootstrap() {
   app.enableCors(options);
 
   // Setup Swagger as a module
-  // SwaggerModule.setup(app, swaggerApiRoot);
-  // SentryModule.setup(app);
+  SwaggerModule.setup(app, swaggerApiRoot);
   await app.listen(3000);
 
   Logger.log(
-    `Server running on ${port}: Docs http://localhost:${3000}/`,
-    'Duplo',
+    `Server running on ${port}: Docs http://localhost:${3000}/${swaggerApiRoot}`,
+    'Listings API',
   );
 }
 bootstrap();
