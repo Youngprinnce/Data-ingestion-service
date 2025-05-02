@@ -3,35 +3,34 @@ import { QueryListingsDto } from '../dto/query-listings.dto';
 export function buildMongoFilters(query: QueryListingsDto): Record<string, any> {
   const filter: Record<string, any> = {};
 
-  // Handle text search
+  // Text search using Prisma-compatible `contains`
   if (query.search) {
-    filter.$text = { $search: query.search };
+    const searchTerm = query.search.trim();
+    filter.OR = [
+      { name: { contains: searchTerm, mode: 'insensitive' } },
+      { city: { contains: searchTerm, mode: 'insensitive' } },
+      { country: { contains: searchTerm, mode: 'insensitive' } },
+    ];
   }
 
-  // Handle dynamic filters
+  // Dynamic filters
   if (query.filters) {
     for (const [key, value] of Object.entries(query.filters)) {
       if (key.startsWith('metadata.')) {
-        // Handle metadata subfields (e.g., metadata.rating)
-        filter[key] = value;
+        const [, subKey] = key.split('.');
+        filter.metadata = filter.metadata || {};
+        filter.metadata[subKey] = value;
       } else if (key === 'isAvailable') {
-        // Handle boolean fields
-        filter[key] = value === 'true' || value === true;
+        filter.isAvailable = value === 'true' || value === true;
       } else if (key === 'priceSegment') {
-        // Handle enum fields
-        filter[key] = value.toUpperCase();
+        filter.priceSegment = String(value).toUpperCase();
       } else if (key.endsWith('Min')) {
-        // Handle range minimum (e.g., pricePerNightMin)
         const field = key.replace('Min', '');
-        filter[field] = filter[field] || {};
-        filter[field].$gte = +value;
+        filter[field] = { ...filter[field], gte: Number(value) };
       } else if (key.endsWith('Max')) {
-        // Handle range maximum (e.g., pricePerNightMax)
         const field = key.replace('Max', '');
-        filter[field] = filter[field] || {};
-        filter[field].$lte = +value;
+        filter[field] = { ...filter[field], lte: Number(value) };
       } else {
-        // Handle direct equality (e.g., city, country)
         filter[key] = value;
       }
     }
@@ -39,3 +38,4 @@ export function buildMongoFilters(query: QueryListingsDto): Record<string, any> 
 
   return filter;
 }
+

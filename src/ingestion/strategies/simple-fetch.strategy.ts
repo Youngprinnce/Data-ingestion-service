@@ -30,13 +30,8 @@ export class SimpleFetchStrategy implements IngestionStrategy {
       const transformed: IngestionResponseDto[] = data.map((item: Record<string, any>) => 
         this.fieldMapper.mapFields(item, fieldMapping)
       ) as IngestionResponseDto[];
-
-      // Process data in batches
-      for (let i = 0; i < transformed.length; i += this.batchSize) {
-        const batch = transformed.slice(i, i + this.batchSize);
-        this.logger.log(`Sending batch of ${batch.length} records`);
-        await onBatch(batch);
-      }
+      this.logger.log(`Sending batch of ${transformed.length} records`);
+      await onBatch(transformed); 
 
       this.logger.log(`Successfully ingested ${transformed.length} records from: ${url}`);
     } catch (error) {

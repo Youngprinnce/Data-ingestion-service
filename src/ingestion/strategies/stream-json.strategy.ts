@@ -17,7 +17,7 @@ export class StreamJsonStrategy implements IngestionStrategy {
     private readonly fieldMapper: FieldMapper,
     private readonly configService: ConfigService,
   ) {
-    this.batchSize = this.configService.get<number>('ingestion.batchSize', 1000);
+    this.batchSize = this.configService.get<number>('app.ingestion.batchSize', 1000);
   }
 
   async ingest(
@@ -27,45 +27,67 @@ export class StreamJsonStrategy implements IngestionStrategy {
   ): Promise<void> {
     const stream = await this.http.callApi(url, 'GET', undefined, true) as Readable;
     const parser = stream.pipe(StreamArray.withParser());
+
     let batch: IngestionResponseDto[] = [];
     let count = 0;
+    let processing = false;
+    let ended = false;
 
-    this.logger.log(`Starting to stream and parse data from ${url}`);
+    const processBatch = async () => {
+      if (batch.length === 0) return;
+
+      processing = true;
+      const currentBatch = [...batch];
+      batch = [];
+
+      this.logger.log(`Processing batch of ${currentBatch.length} items...`);
+
+      try {
+        await onBatch(currentBatch);
+      } catch (err) {
+        this.logger.error(`Batch processing failed: ${err.message}`, err.stack);
+      } finally {
+        processing = false;
+        if (!ended) {
+          parser.resume();
+        }
+      }
+    };
+
+    this.logger.log(`Starting stream ingestion from ${url}`);
 
     await new Promise<void>((resolve, reject) => {
-      parser.on('data', async ({ value }) => {
+      parser.on('data', ({ value }) => {
         try {
           const item = this.fieldMapper.mapFields(value, fieldMapping);
           batch.push(item);
           count++;
 
-          if (batch.length >= this.batchSize) {
+          if (batch.length >= this.batchSize && !processing) {
             parser.pause();
-            this.logger.log(`Sending batch of ${batch.length} records`);
-            await onBatch(batch);
-            batch = [];
-            parser.resume();
+            void processBatch(); // fire-and-forget internally, safe due to flag
           }
-        } catch (e) {
-          this.logger.error(`Error transforming or handling record: ${e.message}`);
-          reject(e);
+        } catch (err) {
+          this.logger.warn(`Skipping invalid record: ${err.message}`);
+          // Don’t reject the entire stream for one bad record
         }
       });
 
       parser.on('end', async () => {
-        this.logger.log(`Stream ended. Total records processed: ${count}`);
+        this.logger.log(`Stream ended after ${count} items`);
+        ended = true;
         if (batch.length > 0) {
-          await onBatch(batch);
+          await processBatch();
         }
         resolve();
       });
 
       parser.on('error', (err) => {
-        this.logger.error(`Parser stream error: ${err.message}`, err.stack);
+        this.logger.error(`Stream error: ${err.message}`, err.stack);
         reject(err);
       });
     });
 
-    this.logger.log(`Finished streaming ingestion from ${url}`);
+    this.logger.log(`Completed ingestion from ${url}`);
   }
 }

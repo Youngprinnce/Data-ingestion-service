@@ -3,7 +3,7 @@ import { buildMongoFilters } from './utils/query-parser.util';
 import { PrismaService } from '../prisma/prisma.service';
 import { QueryListingsDto } from './dto/query-listings.dto';
 
-const MAX_PAGE_SIZE = 100;
+const MAX_PAGE_SIZE = 50;
 
 @Injectable()
 export class ListingsService {
@@ -14,7 +14,7 @@ export class ListingsService {
 
     // Sanitize and enforce pagination limits
     const page = query.page > 0 ? query.page : 1;
-    const limit = Math.min(query.limit || 20, MAX_PAGE_SIZE);
+    const limit = Math.min(query.limit || 50, MAX_PAGE_SIZE);
     const skip = (page - 1) * limit;
 
     // Whitelist sort fields

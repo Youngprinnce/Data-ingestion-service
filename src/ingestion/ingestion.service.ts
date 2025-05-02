@@ -45,7 +45,11 @@ export class IngestionService {
         })
       );
 
-      await Promise.all(upsertPromises);
+      Promise.all(upsertPromises)
+      .catch((err) => {
+        this.logger.error('Upsert batch failed', err);
+      });
+
       this.logger.log(`Saved batch of ${batch.length} listings with deduplication`);
     } catch (error) {
       this.logger.error(`Failed to save batch: ${error.message}`);

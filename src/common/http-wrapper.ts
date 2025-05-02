@@ -23,21 +23,13 @@ export class HttpServiceWrapper {
     data?: any,
     returnStream = false
   ): Promise<T | Readable> {
-    const baseUrl = this.configService.get<string>("app.baseUrl");
-    if (!baseUrl) {
-      throw new Error(
-        "Base URL is not configured in the environment variables."
-      );
-    }
-    const fullUrl = `${baseUrl}/${path.join(url)}`;
-
     this.logger.debug(
-      `API request: ${JSON.stringify({ fullUrl, method, data })}`
+      `API request: ${JSON.stringify({ url, method, data })}`
     );
 
     try {
       const config: AxiosRequestConfig = {
-        url: fullUrl,
+        url,
         method: method as any,
         headers: {
           "Content-Type": "application/json",
