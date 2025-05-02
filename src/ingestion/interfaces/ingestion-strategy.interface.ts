@@ -4,6 +4,6 @@ export interface IngestionStrategy {
   ingest(
     sourceUrl: string,
     fieldMapping: Record<string, string>,
-    onBatch?: (batch: IngestionResponseDto[]) => Promise<void>
-  ): Promise<IngestionResponseDto[] | void>;
+    onBatch: (batch: IngestionResponseDto[]) => Promise<void>
+  ): Promise<void>;
 }

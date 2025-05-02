@@ -1,20 +1,24 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as StreamArray from 'stream-json/streamers/StreamArray';
 import { IngestionStrategy } from '../interfaces/ingestion-strategy.interface';
-import { Readable } from 'stream';
-import { FieldMapper } from '../utils/field-mapper.utils';
 import { IngestionResponseDto } from '../dto/ingestion-response.dto';
-import { HttpServiceWrapper } from '@src/common/http-wrapper';
+import { HttpServiceWrapper } from '../../common/http-wrapper';
+import { Readable } from 'stream';
+import { ConfigService } from '@nestjs/config';
+import { FieldMapper } from '../utils/field-mapper.utils';
 
 @Injectable()
 export class StreamJsonStrategy implements IngestionStrategy {
   private readonly logger = new Logger(StreamJsonStrategy.name);
-  private readonly BATCH_SIZE = 1000;
+  private readonly batchSize: number;
 
   constructor(
     private readonly http: HttpServiceWrapper,
     private readonly fieldMapper: FieldMapper,
-  ) {}
+    private readonly configService: ConfigService,
+  ) {
+    this.batchSize = this.configService.get<number>('ingestion.batchSize', 1000);
+  }
 
   async ingest(
     url: string,
@@ -35,9 +39,9 @@ export class StreamJsonStrategy implements IngestionStrategy {
           batch.push(item);
           count++;
 
-          if (batch.length >= this.BATCH_SIZE) {
+          if (batch.length >= this.batchSize) {
             parser.pause();
-            this.logger.log(`Sending batch of ${batch.length} to handler`);
+            this.logger.log(`Sending batch of ${batch.length} records`);
             await onBatch(batch);
             batch = [];
             parser.resume();

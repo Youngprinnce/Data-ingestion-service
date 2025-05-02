@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { IngestionStrategyFactory } from './ingestion.strategy';
-import { PrismaService } from '@src/prisma/prisma.service';
 import { IngestionResponseDto, IngestionStrategyType } from './dto/ingestion-response.dto';
+import { PrismaService } from '@src/prisma/prisma.service';
 
 @Injectable()
 export class IngestionService {
@@ -17,44 +17,36 @@ export class IngestionService {
     this.logger.log(`Ingesting data from ${url} using strategy: ${strategy}`);
     const ingestionStrategy = this.factory.getStrategy(strategy as IngestionStrategyType);
 
-    if (strategy === IngestionStrategyType.STREAM) {
-      await ingestionStrategy.ingest(url, fieldMapping, async (batch: IngestionResponseDto[]) => {
-        this.logger.log(`Received batch of size ${batch.length}`);
-        await this.saveBatch(batch);
-      });
-    } else {
-      const data = await ingestionStrategy.ingest(url, fieldMapping);
-      if (data && data.length > 0) {
-        this.logger.log(`Fetched ${data.length} records using simple strategy`);
-        await this.saveBatch(data);
-      }
-    }
+    await ingestionStrategy.ingest(url, fieldMapping, async (batch: IngestionResponseDto[]) => {
+      this.logger.log(`Received batch of size ${batch.length}`);
+      await this.saveBatch(batch);
+    });
 
     this.logger.log(`Ingestion process completed for ${url}`);
   }
 
-  private async saveBatch(batch: IngestionResponseDto[]) {
+  private async saveBatch(batch: IngestionResponseDto[]): Promise<void> {
     if (!batch || batch.length === 0) return;
 
-    const sourceIds = batch.map((item) => item.sourceId);
-    const existing = await this.prisma.listing.findMany({
-      where: { sourceId: { in: sourceIds } },
-      select: { sourceId: true },
-    });
-
-    const existingIds = new Set(existing.map((e) => e.sourceId));
-    const uniqueBatch = batch.filter((item) => !existingIds.has(item.sourceId));
-
-    if (uniqueBatch.length === 0) {
-      this.logger.log('All records in batch already exist. Skipping save.');
-      return;
-    }
-
     try {
-      await this.prisma.listing.createMany({
-        data: uniqueBatch,
-      });
-      this.logger.log(`Saved batch of ${uniqueBatch.length} deduplicated listings`);
+      // Process batch with upsert to handle deduplication
+      const upsertPromises = batch.map((item) =>
+        this.prisma.listing.upsert({
+          where: { sourceId: item.sourceId },
+          update: {
+            name: item.name,
+            city: item.city,
+            country: item.country,
+            isAvailable: item.isAvailable,
+            pricePerNight: item.pricePerNight,
+            priceSegment: item.priceSegment,
+          },
+          create: item,
+        })
+      );
+
+      await Promise.all(upsertPromises);
+      this.logger.log(`Saved batch of ${batch.length} listings with deduplication`);
     } catch (error) {
       this.logger.error(`Failed to save batch: ${error.message}`);
     }

@@ -25,9 +25,9 @@ model Listing {
   metadata      Json?        // For unmapped fields from new JSON sources
 
   @@index([name])
-  @@index([city, country])
-  @@index([city, pricePerNight])
-  @@index([country, pricePerNight])
-  @@index([city, isAvailable])
-  @@index([country, isAvailable])
+  @@index([city])
+  @@index([country])
+  @@index([isAvailable])
+  @@index([pricePerNight])
+  @@index([name, city, country])
 }

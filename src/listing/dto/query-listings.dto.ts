@@ -1,39 +1,17 @@
-import { IsOptional, IsBooleanString, IsInt, IsString } from "class-validator";
-import { Type } from "class-transformer";
-import { ApiProperty } from "@nestjs/swagger";
+import { IsOptional, IsBooleanString, IsInt, IsString, IsObject } from 'class-validator';
+import { Type } from 'class-transformer';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class QueryListingsDto {
-  @ApiProperty({ description: 'Filter by name', required: false })
+  @ApiProperty({ description: 'Search term for name, city, or country', required: false })
   @IsOptional()
   @IsString()
-  name?: string;
+  search?: string;
 
-  @ApiProperty({ description: 'Filter by city', required: false })
+  @ApiProperty({ description: 'Dynamic filters (e.g., { "priceSegment": "high", "metadata.rating": 5 })', required: false })
   @IsOptional()
-  @IsString()
-  city?: string;
-
-  @ApiProperty({ description: 'Filter by country', required: false })
-  @IsOptional()
-  @IsString()
-  country?: string;
-
-  @ApiProperty({ description: 'Filter by availability (true/false)', required: false })
-  @IsOptional()
-  @IsBooleanString()
-  isAvailable?: string;
-
-  @ApiProperty({ description: 'Minimum price', required: false, type: Number })
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  priceMin?: number;
-
-  @ApiProperty({ description: 'Maximum price', required: false, type: Number })
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  priceMax?: number;
+  @IsObject()
+  filters?: Record<string, any>;
 
   @ApiProperty({ description: 'Field to sort by', required: false })
   @IsOptional()
@@ -43,7 +21,7 @@ export class QueryListingsDto {
   @ApiProperty({ description: 'Sort order (asc/desc)', required: false, enum: ['asc', 'desc'] })
   @IsOptional()
   @IsString()
-  sortOrder?: "asc" | "desc";
+  sortOrder?: 'asc' | 'desc';
 
   @ApiProperty({ description: 'Number of items per page', required: false, default: 20 })
   @IsOptional()

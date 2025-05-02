@@ -9,5 +9,7 @@ export default registerAs('app', () => ({
   baseUrl: process.env.BASE_URL || 'https://buenro-tech-assessment-materials.s3.eu-north-1.amazonaws.com',
   ingestion: {
     sources: JSON.parse(fs.readFileSync(path.join(__dirname, '../../src/ingestion/ingestion-config.json'), 'utf-8')),
+    cronSchedule: process.env.INGESTION_CRON_SCHEDULE || '0 0 * * * *',
+    batchSize: process.env.INGESTION_BATCH_SIZE || 1000,
   },
 }));

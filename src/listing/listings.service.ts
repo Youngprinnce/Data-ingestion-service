@@ -1,7 +1,7 @@
-import { Injectable } from "@nestjs/common";
-import { buildMongoFilters } from "./utils/query-parser.util";
-import { PrismaService } from "src/prisma/prisma.service";
-import { QueryListingsDto } from "./dto/query-listings.dto";
+import { Injectable } from '@nestjs/common';
+import { buildMongoFilters } from './utils/query-parser.util';
+import { PrismaService } from '../prisma/prisma.service';
+import { QueryListingsDto } from './dto/query-listings.dto';
 
 const MAX_PAGE_SIZE = 100;
 
@@ -17,19 +17,12 @@ export class ListingsService {
     const limit = Math.min(query.limit || 20, MAX_PAGE_SIZE);
     const skip = (page - 1) * limit;
 
-    // Whitelist sort fields (prevents MongoDB injection or invalid fields)
+    // Whitelist sort fields
     const allowedSortFields = [
-      "name",
-      "city",
-      "country",
-      "priceForNight",
-      "pricePerNight",
-      "priceSegment",
+      'name', 'city', 'country', 'pricePerNight', 'priceSegment', 'isAvailable',
     ];
-    const sortField = allowedSortFields.includes(query.sortBy)
-      ? query.sortBy
-      : "priceForNight";
-    const sortDirection = query.sortOrder === "desc" ? "desc" : "asc";
+    const sortField = allowedSortFields.includes(query.sortBy) ? query.sortBy : 'pricePerNight';
+    const sortDirection = query.sortOrder === 'desc' ? 'desc' : 'asc';
 
     const [data, total] = await Promise.all([
       this.prisma.listing.findMany({
@@ -41,9 +34,10 @@ export class ListingsService {
           name: true,
           city: true,
           country: true,
-          priceForNight: true,
-          priceSegment: true,
           pricePerNight: true,
+          priceSegment: true,
+          isAvailable: true,
+          metadata: true,
         },
       }),
       this.prisma.listing.count({ where: filter }),
