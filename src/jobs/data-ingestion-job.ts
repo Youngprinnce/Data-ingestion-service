@@ -13,7 +13,7 @@ export class DataIngestionJob {
   ) {}
 
   //@Cron(process.env.INGESTION_CRON_SCHEDULE || '0 0 * * * *')
-  @Cron(CronExpression.EVERY_5_MINUTES || '0 0 * * * *')
+  @Cron(CronExpression.EVERY_10_HOURS || '0 0 * * * *')
   async handleIngestionCron() {
     this.logger.log('Starting DataIngestionJob...');
     const sources = this.configService.get<{ sourceId: string; url: string; strategy: string; fieldMapping: Record<string, string> }[]>('app.ingestion.sources') || [];
