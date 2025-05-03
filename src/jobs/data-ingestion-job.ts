@@ -12,7 +12,6 @@ export class DataIngestionJob {
     private readonly configService: ConfigService,
   ) {}
 
-
   //@Cron(process.env.INGESTION_CRON_SCHEDULE || '0 0 * * * *')
   @Cron(CronExpression.EVERY_5_MINUTES || '0 0 * * * *')
   async handleIngestionCron() {

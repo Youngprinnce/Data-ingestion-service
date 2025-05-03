@@ -15,7 +15,7 @@ export class SimpleFetchStrategy implements IngestionStrategy {
     private readonly fieldMapper: FieldMapper,
     private readonly configService: ConfigService,
   ) {
-    this.batchSize = this.configService.get<number>('ingestion.batchSize', 1000);
+    this.batchSize = this.configService.get<number>('app.ingestion.batchSize', 1000);
   }
 
   async ingest(

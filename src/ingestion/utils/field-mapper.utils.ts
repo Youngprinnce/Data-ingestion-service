@@ -18,7 +18,6 @@ export class FieldMapper {
       try {
         const value = this.getNestedValue(sourceItem, sourcePath);
         if (value !== undefined) {
-          // Map the value to the target field in IngestionResponseDto
           switch (targetField) {
             case 'id':
               result.sourceId = String(value);
