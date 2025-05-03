@@ -1,121 +1,94 @@
-Backend Assessment Solution
-Overview
-This is a backend solution for the senior backend role technical assessment. It ingests JSON datasets from AWS S3 buckets, stores them efficiently in MongoDB, and exposes the data via a filterable REST API. The solution is built using TypeScript, NestJS, and MongoDB, with a focus on scalability, maintainability, and extensibility.
-Features
+# Backend Assessment Solution
 
-Data Ingestion: Ingests JSON files (~200KB to ~150MB, scalable to 1GB) from S3 at regular intervals (every 12 hours).
-Data Storage: Stores data in a unified MongoDB schema with indexing for efficient querying.
-API: Single endpoint (GET /listings) with filtering (partial text, numeric ranges), sorting, and pagination.
-Extensibility: Supports new JSON sources via configuration, with unmapped fields stored in a metadata field.
+## Overview
 
-Prerequisites
+This is a backend task that ingests JSON datasets from AWS S3 buckets, stores them efficiently in MongoDB, and exposes the data via a filterable REST API. The solution is built using TypeScript, NestJS, and MongoDB, with a focus on scalability, maintainability, and extensibility.
 
-Node.js: Version 18 or higher.
-MongoDB: A running instance (local or cloud, e.g., MongoDB Atlas).
-AWS Credentials: Access to the S3 bucket (buenro-tech-assessment-materials) with read permissions.
-Git: For cloning the repository.
+## Features
 
-Setup Instructions
+* **Data Ingestion**: Ingests JSON files (\~200KB to \~150MB, scalable to 1GB) from S3 at regular intervals (every 12 hours).
+* **Data Storage**: Stores data in a unified MongoDB schema with indexing for efficient querying.
+* **API**: Single endpoint (`GET /listings`) with filtering (partial text, numeric ranges), sorting, and pagination.
+* **Extensibility**: Supports new JSON sources via configuration, with unmapped fields stored in a metadata field.
 
-Clone the Repository:
-git clone <repository-url>
-cd <repository-folder>
+## Prerequisites
 
+* **Node.js**: Version 20 or higher.
+* **MongoDB**: A running instance (MongoDB Atlas).
+* **AWS Credentials**: Access to the S3 bucket (`buenro-tech-assessment-materials`) with read permissions.
+* **Git**: For cloning the repository.
 
-Install Dependencies:
+## Setup Instructions
+
+### Clone the Repository
+
+```bash
+git clone <https://github.com/Youngprinnce/Data-ingestion-service
+cd Data-ingestion-service
+```
+
+### Install Dependencies
+
+```bash
 npm install
+```
 
+### Configure Environment Variables
 
-Configure Environment Variables:Create a .env file in the root directory with the following:
-# MongoDB connection string
-DATABASE_URL=mongodb://localhost:27017/assessment
+Create a `.env` file in the root directory with the following:
 
-# Application port
+```env
 APP_PORT=3000
-
-# Enable cron jobs (set to true to run ingestion jobs)
 PROCESS_ENABLED=true
+DATABASE_URL="mongodb+srv://dev:admin@cluster0.6y15mry.mongodb.net/buenro?retryWrites=true&w=majority"
+BASE_URL='https://buenro-tech-assessment-materials.s3.eu-north-1.amazonaws.com'
+PROCESS_ENABLED=true
+```
 
-# AWS credentials (optional if using AWS SDK defaults)
-AWS_ACCESS_KEY_ID=<your-access-key>
-AWS_SECRET_ACCESS_KEY=<your-secret-key>
-AWS_REGION=eu-north-1
+### Run the Application
 
+```bash
+npm run start:dev
+```
 
-Run the Application:
-npm run start
+The app will start on [http://localhost:3000](http://localhost:3000) (or the configured `APP_PORT`).
 
-The app will start on http://localhost:3000 (or the configured APP_PORT).
+## Access the API
 
-Access the API:
+* **Swagger Documentation**: [http://localhost:3000/docs](http://localhost:3000/docs)
+* **Listings Endpoint**: `GET http://localhost:3000/listings`
 
-Swagger Documentation: http://localhost:3000/docs
-Listings Endpoint: GET http://localhost:3000/listings
+---
 
+## API Usage
 
+### Endpoint: `GET /listings`
 
-API Usage
-Endpoint: GET /listings
 Retrieves listings with flexible filtering, sorting, and pagination.
-Query Parameters
 
+### Query Parameters
 
+| Parameter          | Type    | Description                                                 |
+| ------------------ | ------- | ----------------------------------------------------------- |
+| `search`           | String  | Partial, case-insensitive search on name, city, or country. |
+| `priceSegment`     | Enum    | Filter by price segment (`low`, `medium`, `high`).          |
+| `isAvailable`      | Boolean | Filter by availability (`true`, `false`).                   |
+| `pricePerNightMin` | Integer | Minimum price per night.                                    |
+| `pricePerNightMax` | Integer | Maximum price per night.                                    |
+| `page`             | Integer | Page number (default: `1`).                                 |
+| `limit`            | Integer | Items per page (default: `20`, max: `50`).                  |
+| `sortBy`           | String  | Field to sort by (`name`, `city`, `country`, etc.).         |
+| `sortOrder`        | Enum    | Sort order (`asc`, `desc`, default: `asc`).                 |
 
-Parameter
-Type
-Description
+### Example Request
 
-
-
-search
-String
-Partial, case-insensitive search on name, city, or country.
-
-
-priceSegment
-Enum
-Filter by price segment (low, medium, high).
-
-
-isAvailable
-Boolean
-Filter by availability (true, false).
-
-
-pricePerNightMin
-Integer
-Minimum price per night.
-
-
-pricePerNightMax
-Integer
-Maximum price per night.
-
-
-page
-Integer
-Page number (default: 1).
-
-
-limit
-Integer
-Items per page (default: 20, max: 50).
-
-
-sortBy
-String
-Field to sort by (name, city, country, pricePerNight, etc.).
-
-
-sortOrder
-Enum
-Sort order (asc, desc, default: asc).
-
-
-Example Request
+```bash
 curl "http://localhost:3000/listings?search=Paris&pricePerNightMin=100&priceSegment=high&limit=20&page=1&sortBy=pricePerNight&sortOrder=desc"
+```
 
-Example Response
+### Example Response
+
+```json
 {
   "meta": {
     "total": 50,
@@ -131,50 +104,52 @@ Example Response
       "pricePerNight": 150,
       "priceSegment": "high",
       "isAvailable": true
-    },
-    ...
+    }
   ]
 }
+```
 
-Extending for New JSON Sources
-To support new JSON files with different structures, follow these steps:
+---
 
-Add a New Source to ingestion-config.json:Update src/ingestion/ingestion-config.json with a new entry:
+## Extending for New JSON Sources
+
+### 1. Add a New Source to `ingestion-config.json`
+
+Update `src/ingestion/ingestion-config.json`:
+
+```json
 {
   "sourceId": "source3",
   "url": "https://<s3-bucket>/<new-json-file>.json",
-  "strategy": "stream", // Use "simple" for small files (<1MB), "stream" for large files
+  "strategy": "stream",
   "fieldMapping": {
-    "id": "uniqueId",           // Map source field to `sourceId`
-    "title": "name",           // Map to `name`
-    "location.city": "city",   // Map nested fields with dot notation
+    "id": "uniqueId",
+    "title": "name",
+    "location.city": "city",
     "location.country": "country",
     "available": "isAvailable",
     "price": "pricePerNight"
   }
 }
+```
 
+### 2. Handle Unmapped Fields
 
-Handle Unmapped Fields:
+Unmapped fields are stored in the `metadata` field (type: `Json`).
 
-Fields not mapped in fieldMapping are stored in the metadata field of the Listing model (type: Json).
-Example: If the new JSON has a description field not mapped, it’s stored as metadata.description.
+### 3. Restart the Application
 
+New sources will be ingested automatically on the next cron run (every 12 hours) or manually.
 
-Update Filtering (Optional):
+---
 
-To query new fields (e.g., description), extend QueryListingsDto and buildMongoFilters in listings/utils/query-parser.utils.ts.
-For metadata fields, add MongoDB JSON queries (e.g., metadata.description: { $eq: "value" }).
+## Technical Architecture
 
+The system is designed for scalability, maintainability, and extensibility.
 
-Restart the Application:The ingestion job will automatically pick up the new source on the next cron run (every 12 hours) or can be triggered manually.
+### Architecture Diagram (Textual)
 
-
-This approach minimizes code changes and supports diverse JSON structures via configuration.
-Technical Architecture
-The system is designed for scalability, maintainability, and extensibility, with clear separation of concerns.
-Architecture Diagram
-Below is a textual representation of the architecture. You can recreate it using tools like Draw.io or Lucidchart.
+```
 +------------------------------------+
 | AWS S3                             |
 | - structured_generated_data.json   |
@@ -225,56 +200,60 @@ Below is a textual representation of the architecture. You can recreate it using
 | - Query with filters, pagination   |
 | - Receive JSON response            |
 +------------------------------------+
+```
 
-Component Interactions
+---
 
-Ingestion:
+## Component Interactions
 
-DataIngestionJob runs every 12 hours (cron) and reads sources from ingestion-config.json.
-IngestionService uses a strategy (SimpleFetchStrategy for small files, StreamJsonStrategy for large files) to fetch JSON from S3.
-FieldMapper transforms JSON fields to a unified IngestionResponseDto based on fieldMapping.
-Data is saved to MongoDB via PrismaService with batch upserts, ensuring deduplication by sourceId.
+### Ingestion
 
+* `DataIngestionJob` runs every 12 hours.
+* `IngestionService` selects a strategy based on file size (`SimpleFetchStrategy` or `StreamJsonStrategy`).
+* `FieldMapper` applies the field mapping to normalize fields.
+* Data is saved to MongoDB using `PrismaService` with batch upserts.
 
-Storage:
+### Storage
 
-MongoDB stores data in a Listing collection with a flexible schema (metadata for unmapped fields).
-Indexes optimize filtering and sorting.
+* MongoDB stores listings in a `Listing` collection with indexes and flexible schema (`metadata`).
 
+### API
 
-API:
-
-ListingsController handles GET /listings requests, passing query parameters to ListingsService.
-QueryListingsDto validates and sanitizes inputs.
-QueryParserUtils builds MongoDB filters for text search, ranges, and enums.
-PrismaService executes queries with pagination and sorting, returning results to clients.
-
+* `ListingsController` handles incoming requests.
+* `QueryListingsDto` validates inputs.
+* `QueryParserUtils` builds filters.
+* `PrismaService` executes the database query.
 
 
-Scalability Features
+---
 
-Streaming: StreamJsonStrategy processes large files incrementally to avoid memory issues.
-Batching: Ingestion and storage use configurable batch sizes (default: 1000).
-Indexing: MongoDB indexes ensure fast queries.
-Config-Driven: New sources are added via ingestion-config.json without code changes.
+## Scalability Features
 
-Development Notes
+* **Streaming**: Handles large files efficiently.
+* **Batching**: Reduces memory usage.
+* **Indexing**: Fast queries.
+* **Config-Driven**: Supports multiple sources without code changes.
 
-Error Handling: Comprehensive logging and error recovery (e.g., skipping invalid records in streams).
-Extensibility: Strategy pattern and metadata field support diverse JSON structures.
-Performance: Optimized for large datasets with streaming, batching, and indexing.
+## Development Notes
 
-Future Improvements
+* **Error Handling**: Logs and skips invalid records.
+* **Extensibility**: Metadata and strategy pattern support different formats.
+* **Performance**: Uses streaming, batching, and indexing effectively.
 
-Add a queue (e.g., BullMQ) for concurrent ingestion to prevent resource exhaustion.
-Use MongoDB bulkWrite for faster batch upserts.
-Enable metadata field querying for new attributes.
-Add a text index or Elasticsearch for faster text searches.
+## Future Improvements
 
-Troubleshooting
+* Add ingestion queue with BullMQ.
+* Use MongoDB `bulkWrite` for performance.
+* Allow metadata field querying.
+* Integrate Elasticsearch for advanced search.
+* Integrate Redis for faster querying.
 
-Ingestion Failures: Check AWS credentials and S3 bucket access. Verify ingestion-config.json for correct URLs and mappings.
-MongoDB Errors: Ensure the DATABASE_URL is correct and MongoDB is running.
-API Issues: Use Swagger (/docs) to validate query parameters.
+## Troubleshooting
+
+* **Ingestion Failures**: Check AWS credentials and `ingestion-config.json`.
+* **MongoDB Errors**: Ensure correct `DATABASE_URL` and MongoDB instance.
+* **API Issues**: Validate parameters via Swagger at `/docs`.
+
+---
 
 For further assistance, contact the repository maintainer.
