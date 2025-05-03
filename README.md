@@ -135,7 +135,13 @@ Update `src/ingestion/ingestion-config.json`:
 
 ### 2. Handle Unmapped Fields
 
-Unmapped fields are stored in the `metadata` field (type: `Json`).
+Update `src/ingestion/utils/field-mapper.utils.ts`:
+
+You can decide to update the mapper with how it should handle different object keys otherwise
+
+Fields not mapped in fieldMapping are stored in the metadata field of the Listing model (type: Json).
+
+Example: If the new JSON has a description field not mapped, it’s stored as metadata.description.
 
 ### 3. Restart the Application
 

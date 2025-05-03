@@ -64,7 +64,7 @@ export class QueryListingsDto {
   @IsOptional()
   @IsInt()
   @Transform(({ value }) => (isNaN(Number(value)) ? 1 : Math.max(1, Math.floor(Number(value)))))
-  page: number = 1;
+  page?: number = 1;
 
   @ApiPropertyOptional({
     description: 'Number of items per page (positive integer, max: 50, default: 20)',
@@ -74,7 +74,7 @@ export class QueryListingsDto {
   @IsOptional()
   @IsInt()
   @Transform(({ value }) => (isNaN(Number(value)) ? 20 : Math.max(1, Math.floor(Number(value)))))
-  limit: number = 20;
+  limit?: number = 20;
 
   @ApiPropertyOptional({
     description: 'Sort order (asc/desc, default: asc)',
@@ -83,7 +83,7 @@ export class QueryListingsDto {
   })
   @IsOptional()
   @IsEnum(SortOrder)
-  sortOrder: SortOrder = SortOrder.ASC;
+  sortOrder?: SortOrder = SortOrder.ASC;
 
   @ApiPropertyOptional({
     description: 'Field to sort by (name, city, country, pricePerNight, priceSegment, isAvailable, default: pricePerNight)',
@@ -91,5 +91,5 @@ export class QueryListingsDto {
   })
   @IsOptional()
   @IsIn(['name', 'city', 'country', 'pricePerNight', 'priceSegment', 'isAvailable'])
-  sortBy: string = 'pricePerNight';
+  sortBy?: string = 'pricePerNight';
 }
